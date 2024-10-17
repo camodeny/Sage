@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js" integrity="sha512-LhccdVNGe2QMEfI3x4DVV3ckMRe36TfydKss6mJpdHjNFiV07dFpS2xzeZedptKZrwxfICJpez09iNioiSZ3hA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <title>Sage</title>
+    
+    <style>
+      html, body {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+          width: 100%;
+          background-color: rgb(20, 22, 22);
+      }
+
+      #root {
+          height: 100%;
+          width: 100%;
+      }
+      .chat-bar {
+          width: 100%;
+          padding: 40px;
+          display: flex;
+          justify-content: center;
+      }
+      .chat-container {
+          background-color: #333;
+          width: 70%;
+          display: flex;
+          justify-content: center;
+          padding: 6px;
+          border-radius: 20px;
+          height: 100%
+      }
+      .chat-textarea {
+          width: 100%;
+          resize: none;
+          padding: 6px;
+          padding-left: 10px;
+          padding-right: 10px;
+          background-color: #333;
+          border: none;
+          outline: none;
+          color: white;
+          height: 100%;
+          max-height: 600px;
+          overflow-y: auto;
+      }
+
+        code:not([class]) {
+          font-family: Consolas, "Courier New", monospace; 
+          font-size: 85%;
+          color: #000;
+          background-color: #f5f5f5;
+          padding: 3px;
+          border-radius: 5px;
+          white-space: pre;
+        }
+
+        .wave-text {
+            display: inline-block;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .wave-text span {
+            display: inline-block;
+            position: relative;
+            animation: wave 1.5s infinite ease-in-out;
+            animation-delay: calc(0.05s * var(--i));
+        }
+
+        @keyframes wave {
+            0%, 100% {
+                color: white; /* Starting color */
+            }
+            50% {
+                color: grey; /* Color shift in the middle of the wave */
+            }
+        }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div style="display: flex; height: 100%; width: 100%;">
+        <div class="collapse collapse-horizontal" style="height: 100%; width: 250px; background-color: rgb(30,30,30);" id="collapseWidthExample">
+            <div style="width: 250px;">
+                <div id="shrunk_top_buttons" class="m-2 d-flex justify-content-between">
+                    <button id="menu_shrink" class="btn type="button" data-bs-toggle="collapse" data-bs-target="#collapseWidthExample" aria-expanded="false" aria-controls="collapseWidthExample"><i class="bi bi-square-half" style="color: white;"></i></button>
+
+                    <button id="new_chat_menu" class="btn">
+                        <i class="bi bi-plus-square" style="color: white;"></i>
+                    </button>
+                </div>
+
+                <div>
+                    
+                </div>
+            </div>
+        </div>
+      
+        <div style="flex-grow: 1; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; width: 100%;" id="top_bar">
+                <div id="expanded_top_buttons">
+                  <button id="menu_expand" class="btn ms-2 mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWidthExample" aria-expanded="false" aria-controls="collapseWidthExample">
+                      <i class="bi bi-square-half" style="color: white;"></i>
+                  </button>
+                
+                  <button id="new_chat" class="btn mt-2">
+                      <i class="bi bi-plus-square" style="color: white;"></i>
+                  </button>
+                </div>
+
+                <!-- below is the user profile icon html -->
+                <div class="me-2">
+                    <img src="https://cdn.discordapp.com/avatars/459810325978677249/8178ed550f6685440c81fb12d595ac7f.webp?size=64" alt="User Avatar" style="width: 40px; height: 40px; border-radius: 50%;" class="mt-2">
+                </div>
+            </div>
+
+          <div class="d-flex flex-column p-3" style="height: 100%; width: 100%; overflow: auto;" id="chat_history"></div>
+          <div class="chat-bar">
+            <div class="chat-container">
+                <textarea class="chat-textarea" rows="1" placeholder="Type something ..." style="height: 36px;" id="chat_bar"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+
+
+    <!-- SHOWDOWN EXTENSION -->
+    <script>
+        showdown.extension('bootstrap', function() {
+            return [{
+              type: 'output',
+              filter: function(text) {
+                text = text.replace(/<table>/g, '<table class="table table-striped">');
+                text = text.replace(/<img /g, '<img class="img-fluid" ');
+                text = text.replace(/<blockquote>/g, '<blockquote class="blockquote">');
+                text = text.replace(/<pre>/g, '<pre class="rounded">');
+                text = text.replace(/<p>/g, '<p style="margin:auto;">');
+
+                return text;
+              }
+            }];
+          });
+    </script>
+
+    <!-- GLOBALS -->
+    <script>
+        var chat_id = 0;
+        var brain_chain = {};
+        var chat_history = [];
+        const converter = new showdown.Converter({ extensions: ['bootstrap'] });
+        var global_model_card = null;
+        var global_model_stream_text = "";
+        var global_model_chain_display = null;
+    </script>
+
+    <!-- ADDING USER CHAT -->
+    <script>
+        function createUserTextCard(text) {
+            const card = document.createElement('div');
+            card.classList.add('d-flex', 'justify-content-end', 'w-100', 'my-2', 'px-2');
+            card.innerHTML = `
+                    <div class="card d-inline-block" style="max-width: 65%; background-color: rgb(26, 60, 57);">
+                        <div class="card-body" style="color: white;">
+                        </div>
+                    </div>`;
+            document.getElementById('chat_history').appendChild(card);
+            card_body = card.querySelector('.card-body');
+            let new_html = converter.makeHtml(text);
+            card_body.innerHTML = new_html;
+            hljs.highlightAll();
+        }
+    </script>
+
+
+    <!-- ADDING MODEL CHAT -->
+    <script>
+        function createModelTextCard() {
+            const model_card = document.createElement('div');
+            model_card.classList.add('d-flex', 'justify-content-start', 'w-100', 'my-2', 'px-2');
+            model_card.innerHTML = `
+                <div class="card d-inline-block" style="max-width: 65%; background-color: #474747;">
+                    <div class="card-body" style="color: white;">
+                    </div>
+                </div>`;
+            document.getElementById('chat_history').appendChild(model_card);
+            return model_card.querySelector('.card-body');
+        }
+
+        function createModelImageCard(img_base64_string) {
+            const model_card = document.createElement('div');
+            model_card.classList.add('d-flex', 'justify-content-start', 'w-100', 'my-2', 'px-2');
+            const img_elem = document.createElement('img');
+            img_elem.src = img_base64_string;
+            img_elem.style.width = '400px';
+            img_elem.style.height = '400px';
+            img_elem.classList.add('rounded');
+            model_card.appendChild(img_elem);
+            document.getElementById('chat_history').appendChild(model_card);
+        }
+    </script>
+
+
+    <!-- ADDING MODEL CHAIN DISPLAY -->
+    <script>
+        function createModelChain(model_chain) {
+            const chain_display = document.createElement('div');
+            chain_display.style.color = "white";
+            chain_display.classList.add('wave-text');
+            document.getElementById('chat_history').appendChild(chain_display);
+            return chain_display;
+        }
+    </script>
+
+    <!-- UPDATE MODEL CHAIN CURRENT -->
+    <script>
+        function updateModelChainDisplay(current_tool, display) {
+            display.innerHTML = "";
+            display.textContent = current_tool['tool_purpose'];
+            display.innerHTML = display.textContent.split('').map((char, i) => 
+                char === ' ' 
+                ? `<span style="--i:${i}">&nbsp;</span>` 
+                : `<span style="--i:${i}">${char}</span>`
+            ).join('');
+        }
+    </script>
+
+
+    <!-- handling menu open and collapse action -->
+    <script>
+        const menu_expand_button = document.getElementById('menu_expand');
+        const menu_shrink_button = document.getElementById('menu_shrink');
+
+        const expanded_top_buttons = document.getElementById('expanded_top_buttons');
+        const shrunk_top_buttons = document.getElementById('shrunk_top_buttons');
+        const top_bar = document.getElementById('top_bar');
+
+        menu_expand_button.addEventListener('click', () => {
+            expanded_top_buttons.style.display = "none";
+            shrunk_top_buttons.style.display = "block";
+            top_bar.style.justifyContent = "flex-end";
+        });
+
+        menu_shrink_button.addEventListener('click', () => {
+            expanded_top_buttons.style.display = "block";
+            shrunk_top_buttons.style.display = "none";
+            top_bar.style.justifyContent = "space-between";
+        });
+    </script>
+
+    <!-- Set up socket connection with backend server -->
+    <script>
+        const socket = io.connect('https://4a277a3d-dd84-45e9-9da0-b0266bb82177-00-2yev2xlohp15n.picard.replit.dev:443');
+
+        socket.on('connect', function() {
+            console.log('WebSocket connected');
+        });
+
+        socket.on('message', (msg) => {
+            data = JSON.parse(msg);
+            if (data['intent'] == "create_stream_card") {
+                global_model_card = createModelTextCard();
+            } else if (data['intent'] == "end_stream_card") {
+                chat_history.push({
+                    role: "assistant",
+                    content: global_model_stream_text,
+                    type: "text"
+                });
+                global_model_card = null;
+                global_model_stream_text = "";
+            } else if (data['intent'] == "stream_token") {
+                global_model_stream_text += data['token'];
+                let new_html = converter.makeHtml(global_model_stream_text);
+                global_model_card.innerHTML = new_html;
+                hljs.highlightAll();
+            } else if (data['intent'] == "send_tool_chain") {
+                global_model_chain_display = createModelChain(data['content']['tools'])
+            } else if (data['intent'] == "send_tool_content") {
+                if (data['tool']['display_response']) {
+                    if (data['tool']['output'] == "image") {
+                        createModelImageCard(data['tool']['tool_response']);
+                        chat_history.push({
+                            role: "assistant",
+                            content: data['tool']['tool_response'].split("data:image/png;base64,")[0],
+                            type: "image"
+                        });
+                    } else {
+                        createModelTextCard().innerHTML = data['tool']['tool_response'];
+                        chat_history.push({
+                            role: "assistant",
+                            content: data['tool']['tool_response'],
+                            type: "text"
+                        });
+                    }
+                } else {
+                    chat_history.push({
+                        role: "assistant",
+                        content: data['tool']['tool_response'],
+                        type: "text"
+                    });
+                }
+            } else if (data['intent'] == "send_tool") {
+                updateModelChainDisplay(data['tool'], global_model_chain_display);
+            } else if (data['intent'] == "end_tool_chain") {
+                if (global_model_chain_display) {
+                    updateModelChainDisplay({tool_purpose: "Chain of memories"}, global_model_chain_display);
+                    global_model_chain_display = null;
+                }
+            }
+        });
+    </script>
+
+
+    <!-- sending off chat to backend -->
+    
+    <script>
+        function generatePlan(input_text) {
+            fetch('/api/generate/form_plan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    chat_chain: chat_history,
+                })
+             })
+            .then(response => response.json())
+            .then(data => {
+                socket.send(JSON.stringify({history: chat_history, data:data}));
+            });
+        }
+    </script>
+    
+    <!-- listen to enter key on chat bar -->
+    <script>
+        const chat_bar = document.getElementById('chat_bar');
+        chat_bar.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                chat_history.push({
+                    role: "user",
+                    content: chat_bar.value,
+                    type: "text"
+                });
+                createUserTextCard(chat_bar.value);
+                generatePlan(chat_bar.value);
+                
+                chat_bar.value = '';
+                chat_bar.style.height = "";
+                chat_bar.style.height = Math.min(chat_bar.scrollHeight, 200) + "px";
+            }
+        });
+
+        chat_bar.oninput = () => {
+            chat_bar.style.height = "";
+            chat_bar.style.height = Math.min(chat_bar.scrollHeight, 200) + "px";
+        };
+
+        window.addEventListener('resize', () => {
+            chat_bar.style.height = "";
+            chat_bar.style.height = Math.min(chat_bar.scrollHeight, 200) + "px";
+        });
+    </script>
+</html>

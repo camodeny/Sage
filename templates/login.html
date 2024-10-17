@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sage</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            background-color: rgb(20, 22, 22);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            flex-direction: column;
+        }
+        .input-group-text {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .card {
+            margin-top: 20px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        #emailPasswordForm {
+            display: none;
+        }
+        .btn-primary {
+            margin-top: 10px;
+            width: 100%;
+        }
+        @media (max-width: 576px) {
+            .card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- App name at the top -->
+    
+    <h1 style="color: white; margin-bottom: 10px; font-family: 'Comfortaa', serif;"">Sage</h1>
+
+
+    <div class="card">
+        <h5 class="card-title">Sign In to your Account</h5>
+        <!-- Google SSO Button -->
+
+        <button id="google_sign_up" class="btn mt-3">Login with Google</button>
+
+        <!-- Email and Password Button -->
+        <button id="email_and_password" class="btn btn-success mt-3" onclick="showEmailForm()">Email and Password</button>
+
+        <!-- Email/Password Signup Form -->
+        <form id="emailPasswordForm" class="mt-3">
+            <div class="form-group">
+                <div class="input-group flex-nowrap">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="username-wrapping">@</span>
+                    </div>
+                    <input required type="email" id="username" name="username" class="form-control" placeholder="Email" aria-label="Username" aria-describedby="username-wrapping">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="input-group flex-nowrap">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="password-wrapping">🔑</span>
+                    </div>
+                    <input required type="password" name="password" id="password" class="form-control" placeholder="Password" aria-label="Password" aria-describedby="password-wrapping">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success btn-block" id="submit-button">Log In</button>
+        </form>
+    </div>
+
+    <script>
+        function showEmailForm() {
+            document.getElementById('emailPasswordForm').style.display = 'block';
+            document.getElementById('email_and_password').remove();
+            document.getElementById('google_sign_up').remove();
+        }
+    </script>
+
+    <script>
+        const auth_client = supabase.createClient('https://mozvfpurociylfmytktl.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1venZmcHVyb2NpeWxmbXl0a3RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ5OTMzODIsImV4cCI6MjA0MDU2OTM4Mn0.EPgzGkuZaSu4AvC_iccOsDFRnICO6TFo66d0P4CwajM');
+
+        const redir_url = 'https://4a277a3d-dd84-45e9-9da0-b0266bb82177-00-2yev2xlohp15n.picard.replit.dev/dashboard';
+
+        const confirm_email_url = 'https://4a277a3d-dd84-45e9-9da0-b0266bb82177-00-2yev2xlohp15n.picard.replit.dev/confirm_email';
+
+        
+        document.getElementById('google_sign_up').addEventListener('click', async () => {
+            await auth_client.auth.signInWithOAuth({
+              provider: 'google',
+              options: {
+                redirectTo: redir_url,
+              },
+            })
+        });
+
+        document.getElementById('submit-button').addEventListener('click', async (event) => {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const { data, error } = await auth_client.auth.signInWithPassword({
+                email: username,
+                password: password,
+            });
+
+            if (error) {
+                console.error('Error signing in:', error.message);
+            } else {
+                window.location.href = confirm_email_url;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Sage</title>
+    </head>
+    <body>
+        <div id="root"></div>
+    </body>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.hash.substring(1));
+        const access_token = urlParams.get('access_token');
+
+        if (access_token) {
+            window.location.href = '/dashboard';
+        }
+    </script>
+</html>
