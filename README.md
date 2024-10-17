@@ -1,0 +1,3 @@
+# Sage
+
+Sage is my first try at building my own LLM chat interface. It supports user authentication through supapase, and incluse oauth logins. The idea behind Sage is to give the user full control over the models. It contains 5 different models, and uses brave search api, and wolfram alpha to solve complex tasks. It has a chained logic approach where it creates a set of steps and then deploys it. The front end isn't finished yet, but it currently allows for usage of all the features. I'm prototyping the html to allow users to edit the chains for further customization, and thinking about adding in multi-user chats so you can invite friends!
